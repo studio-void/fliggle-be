@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String     @id @default(uuid())
+  email      String     @unique @db.VarChar(50)
+  name       String?    @db.VarChar(20)
+  password   String     @db.VarChar(100)
+  phone      String?    @unique @db.VarChar(20)
+  profileImg String?    @default("imageUrl")
+  isDeleted  Boolean?   @default(false)
+  birth      DateTime?  @db.Date
+  createdAt  DateTime   @default(now()) @db.Date
+  updatedAt  DateTime   @updatedAt
+  reactions  Reaction[]
+  posts      Post[]
+  fcmTokens  FcmToken[]
+}
+
+model Post {
+  id        Int        @id @default(autoincrement())
+  title     String?    @db.VarChar(100)
+  content   String?    @db.Text
+  authorId  String
+  createdAt DateTime   @default(now()) @db.Date
+  updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [authorId], references: [id])
+  reactions Reaction[]
+}
+
+model Reaction {
+  emoji     String
+  createdAt DateTime  @default(now()) @db.Date
+  deletedAt DateTime? @db.Date
+  postId    Int
+  userId    String
+  post      Post      @relation(fields: [postId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@id([emoji, postId, userId])
+}
+
+model FcmToken {
+  fcmTokenId   String   @id
+  createdAt    DateTime @default(now())
+  lastCheckAt  DateTime @updatedAt
+  successCount Int      @default(0)
+  failCount    Int      @default(0)
+
+  errors String?
+
+  userUuid String? @db.Uuid
+  User     User?   @relation(fields: [userUuid], references: [id])
+  Logs     Log[]
+
+  @@map("fcm_token")
+}
+
+model Log {
+  id        Int      @id @default(autoincrement())
+  content   Json
+  createdAt DateTime @default(now())
+
+  fcmTokenId String
+  FcmToken   FcmToken @relation(fields: [fcmTokenId], references: [fcmTokenId], onDelete: Cascade)
+
+  @@map("log")
+}
