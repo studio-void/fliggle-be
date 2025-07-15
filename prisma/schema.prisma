@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
@@ -25,15 +19,15 @@ model User {
   birth      DateTime?  @db.Date
   createdAt  DateTime   @default(now()) @db.Date
   updatedAt  DateTime   @updatedAt
-  reactions  Reaction[]
-  posts      Post[]
   fcmTokens  FcmToken[]
+  posts      Post[]
+  reactions  Reaction[]
 }
 
 model Post {
   id        Int        @id @default(autoincrement())
   title     String?    @db.VarChar(100)
-  content   String?    @db.Text
+  content   String?
   authorId  String
   createdAt DateTime   @default(now()) @db.Date
   updatedAt DateTime   @updatedAt
@@ -59,19 +53,16 @@ model FcmToken {
   lastCheckAt  DateTime @updatedAt
   successCount Int      @default(0)
   failCount    Int      @default(0)
-
-  errors String?
-
-  userUuid String?
-  User     User?   @relation(fields: [userUuid], references: [id])
-  Logs     Log[]
+  errors       String?
+  userUuid     String?
+  User         User?    @relation(fields: [userUuid], references: [id])
+  Logs         Log[]
 }
 
 model Log {
-  id        Int      @id @default(autoincrement())
-  content   Json
-  createdAt DateTime @default(now())
-
+  id         Int      @id @default(autoincrement())
+  content    Json
+  createdAt  DateTime @default(now())
   fcmTokenId String
   FcmToken   FcmToken @relation(fields: [fcmTokenId], references: [fcmTokenId], onDelete: Cascade)
 }
