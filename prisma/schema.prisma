@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String     @id @default(uuid())
+  email      String     @unique @db.VarChar(320)
+  name       String     @db.VarChar(50)
+  password   String     @db.VarChar(100)
+  phone      String     @unique @db.VarChar(20)
+  profileImg String?    
+  isDeleted  Boolean?   @default(false)
+  birth      DateTime?  @db.Date
+  createdAt  DateTime   @default(now()) @db.Date
+  updatedAt  DateTime   @updatedAt
+  fcmTokens  FcmToken[]
+  posts      Post[]
+  reactions  Reaction[]
+}
+
+model Post {
+  id        Int        @id @default(autoincrement())
+  title     String?    @db.VarChar(100)
+  content   String?
+  authorId  String
+  createdAt DateTime   @default(now()) @db.Date
+  updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [authorId], references: [id])
+  reactions Reaction[]
+}
+
+model Reaction {
+  emoji     String
+  createdAt DateTime  @default(now()) @db.Date
+  deletedAt DateTime? @db.Date
+  postId    Int
+  userId    String
+  post      Post      @relation(fields: [postId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@id([emoji, postId, userId])
+}
+
+model FcmToken {
+  fcmTokenId   String   @id
+  createdAt    DateTime @default(now())
+  lastCheckAt  DateTime @updatedAt
+  successCount Int      @default(0)
+  failCount    Int      @default(0)
+  errors       String?
+  userUuid     String?
+  User         User?    @relation(fields: [userUuid], references: [id])
+  Logs         Log[]
+}
+
+model Log {
+  id         Int      @id @default(autoincrement())
+  content    Json
+  createdAt  DateTime @default(now())
+  fcmTokenId String
+  FcmToken   FcmToken @relation(fields: [fcmTokenId], references: [fcmTokenId], onDelete: Cascade)
+}
